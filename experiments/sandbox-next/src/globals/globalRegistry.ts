@@ -12,6 +12,18 @@ globalRegistry.bind(GET_PAGE_BY_SLUG)
 
       console.log("🚀 ~ return ~ slug:", slug)
 
-      return [{ contentType: "Button", title: "DESDE SERVICE" }]
+      return [
+        { 
+          contentType: "Button", 
+          title: "DESDE SERVICE",
+          slots: {
+            icon: {
+              contentType: "Icon",
+              size: "20",
+              color: "blue"
+            }
+          }
+        }
+      ];
     }
   });
