@@ -4,7 +4,6 @@ import type { MenuItem, MenuProps } from ".";
 
 export default async function transformer(
   widget: Readonly<CMSWidget>,
-  ctx: any
 ): Promise<MenuProps> {
   const transformItems = async (items: CMSWidget[]): Promise<MenuItem[]> => {
     return Promise.all(
