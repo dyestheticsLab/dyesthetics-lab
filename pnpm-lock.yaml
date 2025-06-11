@@ -56,18 +56,12 @@ importers:
 
   experiments/sandbox-vite:
     dependencies:
-      inversify:
-        specifier: ^7.5.2
-        version: 7.5.2(reflect-metadata@0.2.2)
       react:
         specifier: ^19.1.0
         version: 19.1.0
       react-dom:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
-      reflect-metadata:
-        specifier: ^0.2.2
-        version: 0.2.2
     devDependencies:
       '@eslint/js':
         specifier: ^9.25.0
