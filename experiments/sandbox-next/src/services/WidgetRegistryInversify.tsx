@@ -70,11 +70,11 @@ export class WidgetRegistryInversify implements IWidgetRegistry {
 
   private createFactoryHelper(Component: ComponentType) {
     return (ctx: ResolutionContext) => {
-      const transformer: (props: unknown, ctx: ResolutionContext) => unknown = ctx
+      const transformer: (props: unknown, ctx: any) => unknown = ctx
         .get("transformer") ?? ((props: unknown) => props);
 
-      return async function CreatedComponent(rawProps: unknown) {
-        const props = await transformer(rawProps, ctx);
+      return async (rawProps: unknown) => {
+        const props = await transformer(rawProps, this);
 
         return <Component {...props as any} />;
       };
