@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { ComponentType, ReactElement } from "react";
 import { DependencyContainer, Lifecycle } from "tsyringe";
+
 import { globalRegistryTsyringe as container } from "@/globals/tsyringe/globalRegistry";
 
 export type RegisterOptions<T extends (props: any) => ReactElement> = {
@@ -57,7 +58,7 @@ export class WidgetRegistryTSyringe implements IWidgetRegistry {
     
     child.register(componentToken, {
       useFactory: () => factory(child),
-      lifecycle: Lifecycle.Singleton
+      lifecycle: Lifecycle.Transient
     });
 
     this.registry.set(name, child);
