@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { widgetRegistryInversify } from "@/globals/componentRegistry";
-import { GET_PAGE_BY_SLUG, globalRegistry } from "@/globals/globalRegistry";
+import { GET_PAGE_BY_SLUG, globalRegistryTsyringe as globalRegistry } from "@/globals/tsyringe/globalRegistry";
 
 // TODO: Implement process to get slug
 
@@ -8,7 +8,7 @@ export default async function Home() {
 
   const slug = 'home'
 
-  const getPageBySlug: any = globalRegistry.get(GET_PAGE_BY_SLUG)
+  const getPageBySlug: any = globalRegistry.resolve(GET_PAGE_BY_SLUG)
 
   const widgets = getPageBySlug(slug)
 
