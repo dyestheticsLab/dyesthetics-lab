@@ -1,17 +1,12 @@
-
 import { Container } from "inversify";
+import { MockPageDataSource, PageDataSource } from "../services/MockPageDataSource";
+import { MockSlugIndex, SlugIndex } from "../services/MockSlugIndex";
 
-export const globalRegistry = new Container()
+export const globalRegistry = new Container();
 
-export const GET_PAGE_BY_SLUG = Symbol.for("getPageBySlug");
-
-globalRegistry.bind(GET_PAGE_BY_SLUG)
-  .toFactory(() => {
-    return (slug: string) => {
-      // TODO: Implement service to get page by slug
-
-      console.log("🚀 ~ return ~ slug:", slug)
-
-      return [{ contentType: "Button", title: "DESDE SERVICE" }]
-    }
-  });
+globalRegistry
+  .bind<PageDataSource>(MockPageDataSource)
+  .to(MockPageDataSource);
+globalRegistry
+  .bind<SlugIndex>(MockSlugIndex)
+  .to(MockSlugIndex);
