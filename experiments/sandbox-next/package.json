@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "codegen:registry": "tsx src/utils/codegen/index.ts"
   },
   "dependencies": {
     "inversify": "^7.5.2",
