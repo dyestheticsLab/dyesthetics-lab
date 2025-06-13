@@ -11,6 +11,7 @@ export interface MenuProps {
   items: MenuItem[];
 }
 
+// TODO: abstraer la lógica de renderizado recursivo en un componente abstracto
 export default function Menu({ items }: Readonly<MenuProps>) {
   const renderMenuItem = (item: MenuItem): ReactNode => {
     const children = item.children?.map((child) => renderMenuItem(child));
