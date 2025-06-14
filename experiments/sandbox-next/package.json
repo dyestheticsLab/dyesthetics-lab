@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "codegen:registry": "tsx src/utils/codegen/index.ts"
   },
   "dependencies": {
     "inversify": "^7.5.2",
@@ -24,6 +25,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
     "tailwindcss": "^4",
+    "tsx": "^4.20.2",
     "typescript": "^5"
   }
 }
