@@ -134,13 +134,12 @@ export class Template {
       return "  transformer: (props) => props, // No transformer file, using identity function";
     }
 
-    if (
+    const warning =
       component.validation?.transformerValidation?.hasDefaultExport === false
-    ) {
-      return `  transformer: ${component.name}Transformer, // WARNING: Missing default export in transformer`;
-    }
+        ? " // WARNING: Missing default export in transformer"
+        : "";
 
-    return `  transformer: ${component.name}Transformer,`;
+    return `  transformer: ${component.name}Transformer,${warning}`;
   }
 
   private generateContent(): void {
