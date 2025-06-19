@@ -1,5 +1,7 @@
 // THIS FILE IS AUTO-GENERATED - DO NOT EDIT
-// Generated on: 2025-06-19T00:30:59.916Z
+// Generated on: 2025-06-19T23:16:47.941Z
+
+import { componentRegistry } from "./services/registry";
 
 import Button from "../components/button";
 import buttonTransformer from "../components/button/button.transformer";
