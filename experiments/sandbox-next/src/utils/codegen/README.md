@@ -2,6 +2,25 @@
 
 This tool automatically generates a registry of React components and their transformers for a CMS-driven application. It supports multiple dependency injection containers (Inversify, Tsyringe) and provides both programmatic and configuration-file-based usage.
 
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [How It Works](#how-it-works)
+- [Usage](#usage)
+  - [Configuration File](#1-configuration-file)
+  - [Programmatic Usage](#2-programmatic-usage)
+- [Configuration](#configuration)
+  - [Configuration Files](#configuration-files)
+  - [Registry Types](#registry-types)
+  - [Validation](#validation)
+  - [Error Handling](#error-handling)
+- [Architecture](#architecture)
+  - [Project Structure](#project-structure)
+  - [Core Modules](#core-modules)
+  - [Configuration](#configuration-1)
+  - [Types](#types)
+
 ## Features
 
 - 🔍 **Automatic Component Discovery**: Scans your components directory
@@ -11,6 +30,65 @@ This tool automatically generates a registry of React components and their trans
 - 📝 **Detailed Reports**: Get validation reports in JSON format
 - ⚠️ **Warning Generation**: Inline warnings in generated code for issues
 - 🏗️ **Modular Architecture**: Well-organized, maintainable codebase
+
+## Installation
+
+```bash
+# Using npm
+npm install @your-scope/codegen
+
+# Using yarn
+yarn add @your-scope/codegen
+
+# Using pnpm
+pnpm add @your-scope/codegen
+```
+
+## How It Works
+
+```mermaid
+graph TD
+    A[Configuration] --> B[Codegen]
+    B --> C[Scanner]
+    B --> D[Template]
+    C --> E[Component Discovery]
+    E --> F[Validation]
+    F --> G[Validation Report]
+    D --> H[Generate Registry]
+    F --> H
+    H --> I[Generated Registry File]
+    
+    subgraph "Input"
+        A
+    end
+    
+    subgraph "Core Process"
+        B
+        C
+        D
+    end
+    
+    subgraph "Component Processing"
+        E
+        F
+    end
+    
+    subgraph "Output"
+        G
+        I
+    end
+
+    style A fill:#555,stroke:#333,stroke-width:2px
+    style B fill:#ba7,stroke:#333,stroke-width:2px
+    style G fill:#bfb,stroke:#333,stroke-width:2px
+    style I fill:#bfb,stroke:#333,stroke-width:2px
+```
+
+The tool follows these steps:
+1. **Configuration**: Loads and validates configuration from file or programmatic input
+2. **Scanning**: Discovers components and their transformers in the specified directory
+3. **Validation**: Checks component structure and exports
+4. **Generation**: Creates the registry file with proper imports and registrations
 
 ## Usage
 
@@ -66,7 +144,89 @@ async function main() {
 }
 ```
 
-## Project Structure
+## Configuration
+
+### Configuration Files
+
+The tool uses [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig) for configuration file support. Supported formats:
+
+- `dyesthetics.config.{js,cjs,mjs,ts}`
+- `.dyestheticsrc{,.json,.yaml,.yml,.js,.cjs}`
+- `package.json` with "dyesthetics" field
+
+Example output file structure:
+```typescript
+// THIS FILE IS AUTO-GENERATED - DO NOT EDIT
+// Generated on: 2025-06-18T10:00:00.000Z
+
+import Button from "../components/Button";
+import buttonTransformer from "../components/Button/button.transformer";
+import Menu from "../components/Menu";
+import menuTransformer from "../components/Menu/menu.transformer";
+
+widgetRegistryInversify.registerComponent("Button", {
+  Component: Button,
+  transformer: buttonTransformer,
+});
+
+widgetRegistryInversify.registerComponent("Menu", {
+  Component: Menu,
+  transformer: menuTransformer,
+});
+```
+
+### Registry Types
+
+#### Inversify (default)
+```typescript
+{
+  type: 'inversify',
+  importPath: './widgetRegistry',
+  importName: 'widgetRegistryInversify'
+}
+```
+
+#### Tsyringe
+```typescript
+{
+  type: 'tsyringe',
+  importPath: './widgetRegistry',
+  importName: 'widgetRegistryTsyringe'
+}
+```
+
+### Validation
+
+The validation system checks:
+1. Component structure:
+   - Required files presence
+   - File naming conventions
+2. Exports:
+   - Default exports in components
+   - Default exports in transformers
+3. Path validity:
+   - Component paths
+   - Transformer paths
+
+Validation results are provided in three ways:
+1. Console warnings during execution
+2. Inline comments in the generated registry file
+3. Structured JSON validation report
+
+### Error Handling
+
+The tool uses a custom `CodegenError` class for error handling:
+```typescript
+try {
+  await codegen.generate();
+} catch (error) {
+  if (error instanceof CodegenError) {
+    console.error('Codegen error:', error.message);
+  }
+}
+```
+
+## Architecture
 
 The codebase is organized into focused modules for better maintainability:
 
@@ -98,8 +258,6 @@ codegen/
 ├── index.ts          # Public API
 └── README.md
 ```
-
-## Modules
 
 ### Core Modules
 
@@ -194,66 +352,5 @@ interface ValidationReport {
     withWarnings: number;
     withErrors: number;
   };
-}
-```
-
-## Configuration
-
-### Configuration Files
-
-The tool uses [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig) for configuration file support. Supported formats:
-
-- `dyesthetics.config.{js,cjs,mjs,ts}`
-- `.dyestheticsrc{,.json,.yaml,.yml,.js,.cjs}`
-- `package.json` with "dyesthetics" field
-
-### Registry Types
-
-#### Inversify (default)
-```typescript
-{
-  type: 'inversify',
-  importPath: './widgetRegistry',
-  importName: 'widgetRegistryInversify'
-}
-```
-
-#### Tsyringe
-```typescript
-{
-  type: 'tsyringe',
-  importPath: './widgetRegistry',
-  importName: 'widgetRegistryTsyringe'
-}
-```
-
-### Validation
-
-The validation system checks:
-1. Component structure:
-   - Required files presence
-   - File naming conventions
-2. Exports:
-   - Default exports in components
-   - Default exports in transformers
-3. Path validity:
-   - Component paths
-   - Transformer paths
-
-Validation results are provided in three ways:
-1. Console warnings during execution
-2. Inline comments in the generated registry file
-3. Structured JSON validation report
-
-### Error Handling
-
-The tool uses a custom `CodegenError` class for error handling:
-```typescript
-try {
-  await codegen.generate();
-} catch (error) {
-  if (error instanceof CodegenError) {
-    console.error('Codegen error:', error.message);
-  }
 }
 ```
