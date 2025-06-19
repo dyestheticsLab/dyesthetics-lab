@@ -39,7 +39,11 @@ export class Template {
     config: CodegenConfig
   ): string[] {
     const pathUtils = createPathUtils(config);
-    const imports: string[] = [];
+    const registryConfig = this.getRegistryConfig(config);
+    const imports: string[] = [
+      `import { ${registryConfig.importName} } from "${registryConfig.importPath}";`,
+      "",
+    ];
 
     for (const component of components) {
       imports.push(this.generateComponentImport(component, pathUtils));
