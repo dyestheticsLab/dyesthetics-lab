@@ -1,0 +1,259 @@
+# Component Registry Code Generator
+
+This tool automatically generates a registry of React components and their transformers for a CMS-driven application. It supports multiple dependency injection containers (Inversify, Tsyringe) and provides both programmatic and configuration-file-based usage.
+
+## Features
+
+- 🔍 **Automatic Component Discovery**: Scans your components directory
+- 🔄 **Multiple DI Containers**: Supports Inversify and Tsyringe out of the box
+- ⚡ **Flexible Configuration**: Use config files or programmatic setup
+- ✅ **Validation**: Checks for default exports and proper structure
+- 📝 **Detailed Reports**: Get validation reports in JSON format
+- ⚠️ **Warning Generation**: Inline warnings in generated code for issues
+- 🏗️ **Modular Architecture**: Well-organized, maintainable codebase
+
+## Usage
+
+### 1. Configuration File
+
+Create a `dyesthetics.config.ts` (or any other [supported format](#configuration-files)):
+
+```typescript
+import type { CodegenConfig } from '@your-scope/codegen';
+
+const config: CodegenConfig = {
+  componentsDir: 'src/components',
+  outputFile: 'src/generated/componentRegistry.ts',
+  requiredFiles: ['index.tsx'],
+  registry: {
+    type: 'inversify',  // or 'tsyringe'
+    // Optional: override import settings
+    // importPath: './myRegistry',
+    // importName: 'myCustomRegistry',
+  },
+};
+
+export default config;
+```
+
+### 2. Programmatic Usage
+
+```typescript
+import { Codegen } from '@your-scope/codegen';
+
+async function main() {
+  // Example 1: Using file-based configuration (will use inversify by default)
+  const fileBasedCodegen = await Codegen.create();
+  await fileBasedCodegen.generate();
+  
+  // Get validation report
+  const report = await fileBasedCodegen.validate();
+  console.log(JSON.stringify(report, null, 2));
+
+  // Example 2: Using programmatic configuration with tsyringe
+  const programmaticCodegen = new Codegen({
+    componentsDir: 'src/components',
+    outputFile: 'src/generated/componentRegistry.ts',
+    requiredFiles: ['index.tsx'],
+    registry: {
+      type: 'tsyringe',
+      // Optional: override registry configuration
+      // importPath: './myRegistry',
+      // importName: 'myCustomRegistry',
+    },
+  });
+  await programmaticCodegen.generate();
+}
+```
+
+## Project Structure
+
+The codebase is organized into focused modules for better maintainability:
+
+```
+codegen/
+├── config/               # Configuration management
+│   ├── defaults.ts      # Default settings
+│   ├── index.ts         # Config loading
+│   └── presets/         # Registry presets
+│       ├── index.ts
+│       └── registry.ts
+├── core/                # Core functionality
+│   ├── codegen.ts       # Main Codegen class
+│   ├── index.ts
+│   ├── scanner.ts       # Component discovery
+│   └── template.ts      # Code generation
+├── types/               # Type definitions
+│   ├── component.ts     # Component types
+│   ├── config.ts       # Configuration types
+│   ├── index.ts
+│   ├── template.ts     # Template types
+│   └── validation.ts   # Validation types
+├── utils/              # Utility functions
+│   ├── errors.ts      # Error handling
+│   ├── index.ts
+│   └── paths.ts       # Path utilities
+├── examples/          # Usage examples
+│   └── basic-usage.ts
+├── index.ts          # Public API
+└── README.md
+```
+
+## Modules
+
+### Core Modules
+
+#### Codegen (`core/codegen.ts`)
+The main class that orchestrates the component registry generation:
+- Handles file-based and programmatic configuration
+- Coordinates scanning and template generation
+- Provides validation reporting
+
+```typescript
+import { Codegen } from '@your-scope/codegen';
+
+// File-based config
+const codegen = await Codegen.create();
+
+// Programmatic config
+const codegen = new Codegen({...config});
+
+// Generate registry
+await codegen.generate();
+
+// Get validation report
+const report = await codegen.validate();
+```
+
+#### Scanner (`core/scanner.ts`)
+Handles component discovery and validation:
+- Scans component directories
+- Validates component structure
+- Checks for default exports
+- Reports validation issues
+
+#### Template (`core/template.ts`)
+Generates the registry code:
+- Creates import statements
+- Generates component registrations
+- Handles warning comments
+- Supports different registry types
+
+### Configuration
+
+#### Config Loading (`config/index.ts`)
+Supports multiple configuration methods:
+- File-based configuration using cosmiconfig
+- Programmatic configuration
+- Default fallbacks
+
+#### Registry Presets (`config/presets/registry.ts`)
+Pre-configured settings for different DI containers:
+- Inversify (default)
+- Tsyringe
+- Custom registry support
+
+### Types
+
+The type system is organized into domains:
+
+#### Component Types (`types/component.ts`)
+```typescript
+interface ComponentInfo {
+  name: string;
+  componentPath: string;
+  transformerPath?: string;
+  validation?: ValidationResult;
+}
+```
+
+#### Config Types (`types/config.ts`)
+```typescript
+interface CodegenConfig {
+  componentsDir: string;
+  outputFile: string;
+  requiredFiles: string[];
+  registry?: RegistryConfig;
+}
+
+interface RegistryConfig {
+  type: 'inversify' | 'tsyringe';
+  importPath?: string;
+  importName?: string;
+}
+```
+
+#### Validation Types (`types/validation.ts`)
+```typescript
+interface ValidationReport {
+  timestamp: string;
+  components: Record<string, ComponentValidationInfo>;
+  summary: {
+    total: number;
+    valid: number;
+    withWarnings: number;
+    withErrors: number;
+  };
+}
+```
+
+## Configuration
+
+### Configuration Files
+
+The tool uses [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig) for configuration file support. Supported formats:
+
+- `dyesthetics.config.{js,cjs,mjs,ts}`
+- `.dyestheticsrc{,.json,.yaml,.yml,.js,.cjs}`
+- `package.json` with "dyesthetics" field
+
+### Registry Types
+
+#### Inversify (default)
+```typescript
+{
+  type: 'inversify',
+  importPath: './widgetRegistry',
+  importName: 'widgetRegistryInversify'
+}
+```
+
+#### Tsyringe
+```typescript
+{
+  type: 'tsyringe',
+  importPath: './widgetRegistry',
+  importName: 'widgetRegistryTsyringe'
+}
+```
+
+### Validation
+
+The validation system checks:
+1. Component structure:
+   - Required files presence
+   - File naming conventions
+2. Exports:
+   - Default exports in components
+   - Default exports in transformers
+3. Path validity:
+   - Component paths
+   - Transformer paths
+
+Validation results are provided in three ways:
+1. Console warnings during execution
+2. Inline comments in the generated registry file
+3. Structured JSON validation report
+
+### Error Handling
+
+The tool uses a custom `CodegenError` class for error handling:
+```typescript
+try {
+  await codegen.generate();
+} catch (error) {
+  if (error instanceof CodegenError) {
+    console.error('Codegen error:', error.message);
+  }
+}
+```

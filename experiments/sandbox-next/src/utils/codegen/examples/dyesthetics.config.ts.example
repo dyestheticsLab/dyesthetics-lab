@@ -1,0 +1,35 @@
+import { join } from 'path';
+import type { CodegenConfig } from './src/utils/codegen/types';
+
+/**
+ * Configuration for the Dyesthetics component registry generator.
+ * 
+ * This file can be in multiple formats:
+ * - dyesthetics.config.ts/js
+ * - .dyestheticsrc
+ * - .dyestheticsrc.json
+ * - .dyestheticsrc.js
+ * - etc.
+ * 
+ * The config is discovered automatically by cosmiconfig.
+ */
+const config: CodegenConfig = {
+  // Directory containing your components
+  componentsDir: join(process.cwd(), 'src/components'),
+
+  // Where to output the generated registry
+  outputFile: join(process.cwd(), 'src/generated/componentRegistry.ts'),
+
+  // Files that must exist in each component directory
+  requiredFiles: ['index.tsx'],
+
+  // Registry configuration
+  registry: {
+    type: 'inversify', // Default registry type
+    // Optional: you can specify custom import paths if needed
+    // importPath: './myCustomRegistry',
+    // importName: 'myCustomRegistry',
+  },
+};
+
+export default config;
