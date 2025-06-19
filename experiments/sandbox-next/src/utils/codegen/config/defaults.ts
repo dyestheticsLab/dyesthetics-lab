@@ -9,7 +9,16 @@ import type { CodegenConfig } from "../types";
 export const defaultConfig: CodegenConfig = {
   componentsDir: join(process.cwd(), "src/components"),
   outputFile: join(process.cwd(), "src/generated/componentRegistry.ts"),
-  requiredFiles: ["index.tsx"],
+  filePatterns: {
+    index: {
+      name: "index",
+      extensions: [".tsx"],
+    },
+    transformer: {
+      name: "transformer",
+      extensions: [".ts", ".tsx"],
+    },
+  },
   registry: {
     type: "inversify",
   },

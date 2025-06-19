@@ -1,4 +1,13 @@
 import type { RegistryType } from "../config/presets";
+export interface FilePattern {
+  name: string;
+  extensions: string[];
+}
+
+export interface ComponentFilePatterns {
+  index: FilePattern;
+  transformer: FilePattern;
+}
 
 export interface RegistryConfig {
   type: RegistryType;

@@ -1,3 +1,10 @@
+export interface ValidationCollector {
+  errors: string[];
+  warnings: string[];
+  componentValidation?: ComponentValidation;
+  transformerValidation?: ComponentValidation;
+}
+
 export interface ComponentValidation {
   hasDefaultExport: boolean;
   filePath: string;

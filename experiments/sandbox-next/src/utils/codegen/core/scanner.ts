@@ -7,15 +7,10 @@ import type {
   ValidationResult,
   ComponentValidation,
   CodegenConfig,
+  ValidationCollector,
+  FilePattern,
 } from "../types";
 import { CodegenError } from "../utils/errors";
-
-interface ValidationCollector {
-  errors: string[];
-  warnings: string[];
-  componentValidation?: ComponentValidation;
-  transformerValidation?: ComponentValidation;
-}
 
 export class Scanner {
   private static readonly INLINE_DEFAULT_EXPORT_PATTERN =
@@ -49,22 +44,29 @@ export class Scanner {
 
         const fileValidation = this.validateComponent(
           componentDir,
-          componentFiles,
-          this.config
+          componentFiles
         );
+
         if (!fileValidation.isValid) {
           result.skippedFolders.push(entry.name);
           result.transformerWarnings.push(...fileValidation.errors);
           continue;
         }
 
-        const transformerFile = componentFiles.find((file) =>
-          file.includes("transformer.tsx")
+        const indexFile = this.findMatchingFile(
+          componentFiles,
+          this.config.filePatterns.index
+        );
+        if (!indexFile) continue;
+
+        const transformerFile = this.findMatchingFile(
+          componentFiles,
+          this.config.filePatterns.transformer
         );
 
         const componentInfo: ComponentInfo = {
           name: entry.name,
-          componentPath: join(componentDir, "index.tsx"),
+          componentPath: join(componentDir, indexFile),
           transformerPath: transformerFile
             ? join(componentDir, transformerFile)
             : undefined,
@@ -80,26 +82,44 @@ export class Scanner {
     return result;
   }
 
-  private validateRequiredFiles(
+  private validateComponent(
     componentDir: string,
-    files: string[],
-    collector: ValidationCollector
-  ): void {
-    for (const requiredFile of this.config.requiredFiles) {
-      if (!files.includes(requiredFile)) {
-        const error = `Missing required file: ${requiredFile} in ${componentDir}`;
-        console.warn("⚠️ ", error);
-        collector.errors.push(error);
-      }
+    files: string[]
+  ): ValidationResult {
+    const collector: ValidationCollector = {
+      errors: [],
+      warnings: [],
+      componentValidation: undefined,
+      transformerValidation: undefined,
+    };
+
+    const indexFile = this.findMatchingFile(
+      files,
+      this.config.filePatterns.index
+    );
+    if (!indexFile) {
+      collector.errors.push(
+        this.createMissingFileError(
+          componentDir,
+          this.config.filePatterns.index
+        )
+      );
+      return this.createValidationResult(collector);
     }
+
+    this.validateIndexFile(componentDir, indexFile, collector);
+    this.validateTransformerFiles(componentDir, files, collector);
+
+    return this.createValidationResult(collector);
   }
 
   private validateIndexFile(
     componentDir: string,
+    indexFile: string,
     collector: ValidationCollector
   ): void {
-    const indexFile = join(componentDir, "index.tsx");
-    const componentValidation = this.validateDefaultExport(indexFile);
+    const indexPath = join(componentDir, indexFile);
+    const componentValidation = this.validateDefaultExport(indexPath);
     if (componentValidation.warnings.length > 0) {
       console.warn("⚠️ ", componentValidation.warnings[0]);
     }
@@ -113,7 +133,7 @@ export class Scanner {
     collector: ValidationCollector
   ): void {
     const transformerFiles = files.filter((file) =>
-      file.includes("transformer")
+      this.matchesFilePattern(file, this.config.filePatterns.transformer)
     );
 
     this.validateTransformerCount(componentDir, transformerFiles, collector);
@@ -142,13 +162,15 @@ export class Scanner {
     transformerFiles: string[],
     collector: ValidationCollector
   ): void {
+    const pattern = this.config.filePatterns.transformer;
     const invalidTransformers = transformerFiles.filter(
-      (file) => !file.endsWith(".tsx")
+      (file) => !pattern.extensions.some((ext) => file.endsWith(ext))
     );
+
     if (invalidTransformers.length > 0) {
-      const warning = `Invalid transformer file extension in ${componentDir}: ${invalidTransformers.join(
+      const warning = `Invalid transformer file extension in ${componentDir}. Valid extensions are: ${pattern.extensions.join(
         ", "
-      )}`;
+      )}. Found: ${invalidTransformers.join(", ")}`;
       console.warn("⚠️ ", warning);
       collector.warnings.push(warning);
     }
@@ -209,17 +231,9 @@ export class Scanner {
     };
   }
 
-  private validateComponent(
-    componentDir: string,
-    files: string[],
-    config: CodegenConfig
+  private createValidationResult(
+    collector: ValidationCollector
   ): ValidationResult {
-    const collector = this.createValidationCollector();
-
-    this.validateRequiredFiles(componentDir, files, collector);
-    this.validateIndexFile(componentDir, collector);
-    this.validateTransformerFiles(componentDir, files, collector);
-
     return {
       isValid: collector.errors.length === 0,
       errors: collector.errors,
@@ -229,10 +243,36 @@ export class Scanner {
     };
   }
 
-  private createValidationCollector(): ValidationCollector {
-    return {
-      errors: [],
-      warnings: [],
-    };
+  private findMatchingFile(
+    files: string[],
+    pattern: FilePattern
+  ): string | undefined {
+    return files.find((file) => this.matchesFilePattern(file, pattern));
+  }
+
+  private matchesFilePattern(file: string, pattern: FilePattern): boolean {
+    const baseName = file.substring(0, file.lastIndexOf("."));
+    const extension = file.substring(file.lastIndexOf("."));
+
+    // For transformers, allow component name prefix (e.g., button.transformer.tsx)
+    if (pattern.name === "transformer") {
+      return (
+        baseName.endsWith(".transformer") &&
+        pattern.extensions.includes(extension)
+      );
+    }
+
+    // For other patterns (like index), require exact name match
+    return baseName === pattern.name && pattern.extensions.includes(extension);
+  }
+
+  private createMissingFileError(
+    componentDir: string,
+    pattern: FilePattern
+  ): string {
+    const examples = pattern.extensions
+      .map((ext) => `${pattern.name}${ext}`)
+      .join(" or ");
+    return `Missing required file: ${examples} in ${componentDir}`;
   }
 }
