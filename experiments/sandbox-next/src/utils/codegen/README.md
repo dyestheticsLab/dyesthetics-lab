@@ -102,7 +102,17 @@ import type { CodegenConfig } from '@your-scope/codegen';
 const config: CodegenConfig = {
   componentsDir: 'src/components',
   outputFile: 'src/generated/componentRegistry.ts',
-  requiredFiles: ['index.tsx'],
+  filePatterns: {
+    index: {
+      names: ['index'],
+      extensions: ['.tsx']
+    },
+    transformer: {
+      // Supports multiple patterns with glob-like syntax
+      names: ['*.transformer', 'transformer'],
+      extensions: ['.ts', '.tsx']
+    }
+  },
   registry: {
     type: 'inversify',  // or 'tsyringe'
     // Optional: override import settings
@@ -125,19 +135,19 @@ async function main() {
   await fileBasedCodegen.generate();
   
   // Get validation report
-  const report = await fileBasedCodegen.validate();
+  const report = await fileBasedCodegen.getValidationReport();
   console.log(JSON.stringify(report, null, 2));
 
   // Example 2: Using programmatic configuration with tsyringe
   const programmaticCodegen = new Codegen({
     componentsDir: 'src/components',
     outputFile: 'src/generated/componentRegistry.ts',
-    requiredFiles: ['index.tsx'],
+    filePatterns: {
+      index: { names: ['index'], extensions: ['.tsx'] },
+      transformer: { names: ['*.transformer', 'transformer'], extensions: ['.ts', '.tsx'] }
+    },
     registry: {
       type: 'tsyringe',
-      // Optional: override registry configuration
-      // importPath: './myRegistry',
-      // importName: 'myCustomRegistry',
     },
   });
   await programmaticCodegen.generate();
@@ -213,14 +223,46 @@ Validation results are provided in three ways:
 2. Inline comments in the generated registry file
 3. Structured JSON validation report
 
+### File Patterns
+
+The tool uses configurable file patterns to locate component and transformer files:
+
+```typescript
+interface FilePattern {
+  /** Base name without extension (e.g., "index", "transformer") */
+  name: string;
+  /** Valid extensions for this file (e.g., [".tsx"] or [".ts", ".tsx"]) */
+  extensions: string[];
+}
+
+interface ComponentFilePatterns {
+  /** Main component file pattern */
+  index: FilePattern;
+  /** Transformer file pattern */
+  transformer: FilePattern;
+}
+```
+
+By default:
+- Components are expected to be in `index.tsx` files
+- Transformers can be in either `.ts` or `.tsx` files and can include the component name (e.g., `button.transformer.tsx`)
+
 ### Error Handling
 
-The tool uses a custom `CodegenError` class for error handling:
+The tool uses a custom `CodegenError` class with specific error codes for different operations:
+
 ```typescript
+const enum CodegenErrorCode {
+  GENERATION_FAILED = "GENERATION_FAILED", // Overall generation process failed
+  WRITE_FAILED = "WRITE_FAILED",          // File write operation failed
+  VALIDATION_FAILED = "VALIDATION_FAILED"  // Validation report generation failed
+}
+
 try {
   await codegen.generate();
 } catch (error) {
   if (error instanceof CodegenError) {
+    // Error code is included in the message: [CODE] Description
     console.error('Codegen error:', error.message);
   }
 }
@@ -330,7 +372,7 @@ interface ComponentInfo {
 interface CodegenConfig {
   componentsDir: string;
   outputFile: string;
-  requiredFiles: string[];
+  filePatterns: ComponentFilePatterns;
   registry?: RegistryConfig;
 }
 
