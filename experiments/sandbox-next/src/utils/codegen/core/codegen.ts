@@ -13,55 +13,25 @@ import { CodegenError } from "../utils/errors";
 import { ensureDirectoryExists } from "../utils/paths";
 import { loadConfig } from "../config";
 
-enum CodegenErrorCode {
-  SCAN_FAILED = "SCAN_FAILED",
-  TEMPLATE_GENERATION_FAILED = "TEMPLATE_GENERATION_FAILED",
-  FILE_WRITE_FAILED = "FILE_WRITE_FAILED",
+const enum CodegenErrorCode {
+  GENERATION_FAILED = "GENERATION_FAILED",
+  WRITE_FAILED = "WRITE_FAILED",
+  VALIDATION_FAILED = "VALIDATION_FAILED"
 }
 
 export class Codegen {
   private readonly scanner: Scanner;
   private readonly config: CodegenConfig;
-  private cachedScanResult?: ScanResult;
 
   static async create(): Promise<Codegen> {
     const config = await loadConfig();
-    return new Codegen(config);
+    const scanner = new Scanner(config);
+    return new Codegen(config, scanner);
   }
 
-  constructor(config: CodegenConfig) {
+  constructor(config: CodegenConfig, scanner: Scanner) {
     this.config = config;
-    this.scanner = new Scanner(config);
-  }
-
-  private handleError(
-    error: unknown,
-    code: CodegenErrorCode,
-    context: string
-  ): never {
-    if (error instanceof CodegenError) {
-      throw error; // Preserve existing CodegenError
-    }
-    throw new CodegenError(
-      `[${code}] ${context}: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
-  }
-
-  private async getScanResult(refresh = false): Promise<ScanResult> {
-    if (!this.cachedScanResult || refresh) {
-      try {
-        this.cachedScanResult = await this.scanner.scan();
-      } catch (error) {
-        this.handleError(
-          error,
-          CodegenErrorCode.SCAN_FAILED,
-          "Failed to scan component directory"
-        );
-      }
-    }
-    return this.cachedScanResult;
+    this.scanner = scanner;
   }
 
   private generateValidationReport(scanResult: ScanResult): ValidationReport {
@@ -146,36 +116,50 @@ export class Codegen {
     );
   }
 
-  async generate(): Promise<void> {
+  public async generate(): Promise<void> {
     console.log("🔍 Scanning component directory...");
 
     try {
-      const scanResult = await this.getScanResult(true); // Force fresh scan
+      const scanResult = await this.scanner.scan();
+
       const template = new Template(scanResult, this.config);
+      const content = template.toString();
 
       await ensureDirectoryExists(this.config.outputFile);
-      await writeFile(this.config.outputFile, template.toString(), "utf-8");
+      try {
+        await writeFile(this.config.outputFile, content, "utf-8");
+      } catch (error) {
+        throw new CodegenError(
+          `[${CodegenErrorCode.WRITE_FAILED}] Failed to write registry file: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
 
       console.log("✨ Component registry generated successfully");
     } catch (error) {
-      this.handleError(
-        error,
-        CodegenErrorCode.TEMPLATE_GENERATION_FAILED,
-        "Failed to generate component registry"
+      if (error instanceof CodegenError) throw error;
+      
+      throw new CodegenError(
+        `[${CodegenErrorCode.GENERATION_FAILED}] Failed to generate component registry: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }
 
-  async validate(): Promise<ValidationReport> {
-    console.log("🔍 Validating components...");
+  public async getValidationReport(): Promise<ValidationReport> {
+    console.log("🔍 Analyzing components...");
     try {
-      const scanResult = await this.getScanResult();
+      const scanResult = await this.scanner.scan();
       return this.generateValidationReport(scanResult);
     } catch (error) {
-      this.handleError(
-        error,
-        CodegenErrorCode.SCAN_FAILED,
-        "Failed to validate components"
+      if (error instanceof CodegenError) throw error;
+
+      throw new CodegenError(
+        `[${CodegenErrorCode.VALIDATION_FAILED}] Failed to analyze components: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   }
