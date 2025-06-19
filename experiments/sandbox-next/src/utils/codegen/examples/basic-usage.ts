@@ -61,6 +61,20 @@ async function programmaticExample() {
     // Specify component directory
     componentsDir: join(process.cwd(), "src/components"),
 
+    // Configure file patterns
+    filePatterns: {
+      // Main component file pattern
+      index: {
+        names: ["index"],
+        extensions: [".tsx"],
+      },
+      // Transformer file patterns (supports glob-like syntax)
+      transformer: {
+        names: ["*.transformer", "transformer"],
+        extensions: [".ts", ".tsx"],
+      },
+    },
+
     // Specify output file location
     outputFile: join(process.cwd(), "src/generated/componentRegistry.ts"),
 

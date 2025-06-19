@@ -11,11 +11,11 @@ export const defaultConfig: CodegenConfig = {
   outputFile: join(process.cwd(), "src/generated/componentRegistry.ts"),
   filePatterns: {
     index: {
-      name: "index",
+      names: ["index"],
       extensions: [".tsx"],
     },
     transformer: {
-      name: "transformer",
+      names: ["transformer", "*.transformer"],
       extensions: [".ts", ".tsx"],
     },
   },

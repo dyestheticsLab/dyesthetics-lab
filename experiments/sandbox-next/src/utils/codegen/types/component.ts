@@ -1,5 +1,9 @@
 import type { ValidationResult } from "../types";
 
+export interface FileMatch {
+  file: string;
+  componentName?: string;
+}
 export interface ComponentInfo {
   name: string;
   componentPath: string;
