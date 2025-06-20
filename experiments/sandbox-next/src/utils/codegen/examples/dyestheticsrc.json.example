@@ -1,0 +1,5 @@
+{
+  "componentsDir": "src/components",
+  "outputFile": "src/generated/componentRegistry.ts",
+  "requiredFiles": ["index.tsx"]
+}

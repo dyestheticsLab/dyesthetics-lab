@@ -6,9 +6,11 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "codegen:example": "tsx src/utils/codegen/examples/basic-usage.ts"
   },
   "dependencies": {
+    "cosmiconfig": "^9.0.0",
     "inversify": "^7.5.2",
     "next": "15.3.3",
     "react": "^19.0.0",
